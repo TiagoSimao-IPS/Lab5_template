@@ -18,32 +18,122 @@ public class View extends BorderPane {
 
     public View(ShoppingCart shoppingCart) {
         this.shoppingCart = shoppingCart;
-        init();
+        initView();
     }
 
-    public void init() {
-        GridPane gridPaneAddProduct = new GridPane();
-        Label labelAddProduct = new Label("Add products to cart");
-        labelAddProduct.setStyle("-fx-font-weight: bold");
-        gridPaneAddProduct.add(labelAddProduct, 0, 0);
-        gridPaneAddProduct.add(new Label("Name"), 0, 1);
-        TextField textFieldProductName = new TextField();
-        gridPaneAddProduct.add(textFieldProductName, 1, 1);
-        gridPaneAddProduct.add(new Label("Price"), 0, 2);
-        TextField textFieldPrice = new TextField();
-        gridPaneAddProduct.add(textFieldPrice, 1, 2);
+    public void initView() {
+        // Add product
+        createAddProductGrid();
+
+        // Shopping cart
+        createShoppingCartGrid();
+
+        createStage();
+    }
+
+    private void createAddProductGrid() {
+        GridPane gridPaneAddProduct = createGridPaneAddProduct();
+
+        TextField textFieldProductName = addTextField(gridPaneAddProduct);
+        TextField textFieldPrice = addTextFieldPrice(gridPaneAddProduct, 2);
+
+        createHBoxAddProducts(gridPaneAddProduct, textFieldProductName, textFieldPrice);
+    }
+
+    private void createHBoxAddProducts(GridPane gridPaneAddProduct, TextField textFieldProductName, TextField textFieldPrice) {
         HBox hBoxAddProductButtons = new HBox(6);
-        Button buttonAddProduct = new Button("Add");
-        Button buttonTerminate = new Button("End");
+
+        Label labelEnd = getLabelEnd(hBoxAddProductButtons);
+        Label labelCost = getLabelCost(gridPaneAddProduct, hBoxAddProductButtons);
+
+        Button buttonAddProduct = getAddButton(textFieldProductName, textFieldPrice, labelCost);
+        Button buttonTerminate = getTerminateButton(buttonAddProduct, labelEnd, labelCost);
+
+        hBoxAddProductButtons.getChildren().addAll(buttonAddProduct, buttonTerminate);
+        this.setTop(gridPaneAddProduct);
+    }
+
+    private TextField addTextFieldPrice(GridPane gridPaneAddProduct, int i) {
+        TextField textFieldPrice = createTextField();
+        gridPaneAddProduct.add(textFieldPrice, 1, i);
+
+        return textFieldPrice;
+    }
+
+    private TextField addTextField(GridPane gridPaneAddProduct) {
+        TextField textFieldProductName = addTextFieldPrice(gridPaneAddProduct, 1);
+        gridPaneAddProduct.add(new Label("Price"), 0, 2);
+
+        return textFieldProductName;
+    }
+
+    private TextField createTextField() {
+        return new TextField();
+    }
+
+    private Label getLabelCost(GridPane gridPaneAddProduct, HBox hBoxAddProductButtons) {
+        Label labelCost = createLabel("Total cost: 0.0 €");
+        gridPaneAddProduct.add(labelCost, 0, 3);
+        gridPaneAddProduct.add(hBoxAddProductButtons, 1, 3);
+
+        return labelCost;
+    }
+
+    private Label getLabelEnd(HBox hBoxAddProductButtons) {
         Label labelEnd = new Label();
         this.setBottom(labelEnd);
 
         hBoxAddProductButtons.setAlignment(Pos.CENTER_RIGHT);
         hBoxAddProductButtons.setStyle("-fx-padding: 2px 0 0 0");
-        Label labelCost = new Label("Total cost: 0.0 €");
-        gridPaneAddProduct.add(labelCost, 0, 3);
-        gridPaneAddProduct.add(hBoxAddProductButtons, 1, 3);
-        hBoxAddProductButtons.getChildren().addAll(buttonAddProduct, buttonTerminate);
+
+        return labelEnd;
+    }
+
+    private GridPane createGridPaneAddProduct() {
+        GridPane gridPaneAddProduct = new GridPane();
+        Label labelAddProduct = createLabel("Add products to cart");
+        labelAddProduct.setStyle("-fx-font-weight: bold");
+        gridPaneAddProduct.add(labelAddProduct, 0, 0);
+        gridPaneAddProduct.add(new Label("Name"), 0, 1);
+
+        return gridPaneAddProduct;
+    }
+
+    private Label createLabel(String s) {
+        return new Label(s);
+    }
+
+    private void createShoppingCartGrid() {
+        GridPane gridPaneCartContents = new GridPane();
+        Label labelCartContents = createLabel("Cart contents");
+        labelCartContents.setStyle("-fx-font-weight: bold");
+        createListView(gridPaneCartContents, labelCartContents);
+        this.setStyle("-fx-padding: 5px");
+    }
+
+    private Button getTerminateButton(Button buttonAddProduct, Label labelEnd, Label labelCost) {
+        Button buttonTerminate = new Button("End");
+        buttonTerminate.setOnAction((ActionEvent e) -> {
+            shoppingCart.terminate();
+
+            String strEnd;
+            if (shoppingCart.isTerminated()) {
+                strEnd = String.format("%s Total Cost %.2f Number of Items %d", shoppingCart.getDateStr(),
+                        shoppingCart.getTotal(), shoppingCart.getProducts().size());
+            } else {
+                strEnd = "";
+            }
+            labelCost.setText(String.format("Current Cost %.1f €", shoppingCart.getTotal()));
+            buttonAddProduct.setDisable(true);
+
+            labelEnd.setText(strEnd);
+        });
+
+        return buttonTerminate;
+    }
+
+    private Button getAddButton(TextField textFieldProductName, TextField textFieldPrice, Label labelCost) {
+        Button buttonAddProduct = new Button("Add");
         buttonAddProduct.setOnAction((ActionEvent e) -> {
             if (textFieldProductName.getText().isEmpty() || textFieldPrice.getText().isEmpty()) {
                 showAlert("empty fields");
@@ -64,29 +154,8 @@ public class View extends BorderPane {
                 }
             }
         });
-        this.setTop(gridPaneAddProduct);
-        buttonTerminate.setOnAction((ActionEvent e) -> {
-            shoppingCart.terminate();
 
-            String strEnd;
-            if (shoppingCart.isTerminated()) {
-                strEnd = String.format("%s Total Cost %.2f Number of Items %d", shoppingCart.getDateStr(),
-                        shoppingCart.getTotal(), shoppingCart.getProducts().size());
-            } else {
-                strEnd = "";
-            }
-            labelCost.setText(String.format("Current Cost %.1f €", shoppingCart.getTotal()));
-            buttonAddProduct.setDisable(true);
-
-            labelEnd.setText(strEnd);
-        });
-        // Shopping cart
-        GridPane gridPaneCartContents = new GridPane();
-        Label labelCartContents = new Label("Cart contents");
-        labelCartContents.setStyle("-fx-font-weight: bold");
-        createListView(gridPaneCartContents, labelCartContents);
-        this.setStyle("-fx-padding: 5px");
-        createStage();
+        return buttonAddProduct;
     }
 
     private void createListView(GridPane gridPaneCartContents, Label labelCartContents) {
